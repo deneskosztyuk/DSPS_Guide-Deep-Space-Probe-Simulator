@@ -16,7 +16,7 @@ def create_left_panel(parent, width):
     left_frame = tk.Frame(parent, bg='black', width=width, height=290)
     left_frame.place(x=0, y=29)
     left_frame.pack_propagate(False)  # Prevent widgets from changing frame's size
-    label = tk.Label(left_frame, text="DPSP Live View", bg='#211f1d', fg='white', font=("Arial", 14))
+    label = tk.Label(left_frame, text="Probe Live View", bg='#211f1d', fg='white', font=("Arial", 14))
     label.pack()
 
     # Load the GIF with Pillow
@@ -41,15 +41,15 @@ def create_right_panel(parent, width):
     right_frame = tk.Frame(parent, bg='black', width=width, height=290)  # Use the provided width
     right_frame.place(x=width, y=29)  # Position it to the right of the left panel
     right_frame.pack_propagate(False)  # Prevent widgets from changing frame's size
-    label = tk.Label(right_frame, text="DPSP Live Telemetry", bg='#211f1d', fg='white', font=("Arial", 14))
+    label = tk.Label(right_frame, text="Live Telemetry", bg='#211f1d', fg='white', font=("Arial", 14))
     label.pack()
 
     # Create labels for each line of text
     text_labels = [
-        "Humidity: 80%",
-        "Atmospheric pressure: 1013 hPa",
-        "Temperature: 25°C",
-        "Time: 12:00 PM"
+        "Humidity: 0.05%",
+        "Atmospheric pressure: 6013 hPa",
+        "Temperature: -165°C",
+        "Time: 12:41 PM"
     ]
 
     # Add the text labels to the right frame with green color
@@ -64,7 +64,7 @@ def create_right_panel(parent, width):
 def create_bottom_panel(parent):
     bottom_frame = tk.Frame(parent, bg='black', width=960, height=290)
     bottom_frame.place(x=0, y=320)
-    label = tk.Label(bottom_frame, text="DSPS Control Commands", bg='#211f1d', fg='white', font=("Arial", 14))
+    label = tk.Label(bottom_frame, text="Control Commands", bg='#211f1d', fg='white', font=("Arial", 14))
     bottom_frame.pack_propagate(False)
     label.pack()
 
