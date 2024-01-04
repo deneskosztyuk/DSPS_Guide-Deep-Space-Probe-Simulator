@@ -62,13 +62,46 @@ def create_right_panel(parent, width):
     return right_frame
 
 def create_bottom_panel(parent):
-    bottom_frame = tk.Frame(parent, bg='black', width=960, height=290)
-    bottom_frame.place(x=0, y=320)
-    label = tk.Label(bottom_frame, text="Control Commands", bg='#211f1d', fg='white', font=("Arial", 14))
-    bottom_frame.pack_propagate(False)
-    label.pack()
+    button_frame = tk.Frame(parent, bg='black', height=100)
+    button_frame.pack(side="bottom", fill="x")
 
-    return bottom_frame
+    # Define the width of the buttons (you can adjust this value)
+    button_width = 20
+    button_height = 5
+
+    # Define the commands for the buttons
+    def on_off_command():
+        print("Toggled On/Off")
+
+    def solar_panel_deployment_command():
+        print("Solar Panel Deployment")
+
+    def receive_telemetry_data_command():
+        print("Receiving telemetry data")
+
+    def change_to_camera_view_command():
+        print("Changed to Camera View")
+
+    def change_to_gyroscope_view_command():
+        print("Change to Gyroscope View")
+
+    # Define button texts and associated commands in a list of tuples
+    buttons_info = [
+        ("On/Off", on_off_command),
+        ("Solar Panel Deployment", solar_panel_deployment_command),
+        ("Receive telemetry data", receive_telemetry_data_command),
+        ("Change to camera view", change_to_camera_view_command),
+        ("Change to gyroscope view", change_to_gyroscope_view_command),
+    ]
+
+    # Create and pack buttons into the frame
+    for text, command in buttons_info:
+        button = tk.Button(button_frame, text=text, command=command,
+                           bg="#211f1d", fg="white", font=("Arial", 10),
+                           width=button_width, height=button_height)
+        button.pack(side="left", padx=5, pady=65, expand=True)
+
+    return button_frame
 
 def configure_main_window(window):
     window.title('DSPS Mission Control')
