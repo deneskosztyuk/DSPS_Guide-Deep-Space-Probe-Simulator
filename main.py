@@ -1,156 +1,311 @@
-import tkinter as tk
+import os, signal, threading, itertools, requests, tkinter as tk
 from PIL import Image, ImageTk, ImageSequence
-import itertools
+from datetime import datetime
+from flask import Flask, request, jsonify
 
+
+# Initialize Flask app and queue for sensor data
+app = Flask(__name__)
+
+# Initialize global variables for telemetry labels and states
+is_connected = False
+should_reset = False
+temperature_label = None
+humidity_label = None
+pressure_label = None
+date_time_label = None
+connection_status_label = None
+chat_box = None
+on_off_button = None
+
+# Flask route for receiving sensor data
+@app.route('/sensor-data', methods=['POST'])
+def receive_data():
+    global is_connected, should_reset
+    if not is_connected:
+        return jsonify({"status": "Connection not established"}), 503
+    sensor_data = request.json
+    print(sensor_data)
+
+    # Update GUI with new sensor data
+    update_sensor_data(sensor_data)
+
+    if should_reset:
+        should_reset = False  # Reset the flag
+        return jsonify("reset"), 200
+    else:
+        return jsonify({"status": "Data received"}), 200
+
+@app.route('/reset', methods=['POST'])
+def reset_device():
+    global should_reset
+    should_reset = True  # Set the reset flag
+    return jsonify({"status": "Reset signal sent"}), 200
+
+# Function to run the Flask server in a background thread
+def run_flask_app():
+    app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)
+
+# Function to update the labels with sensor data
+def update_sensor_data(sensor_data):
+    global temperature_label, humidity_label, pressure_label, connection_status_label
+    if temperature_label and humidity_label and pressure_label:
+        temperature_label.config(text=f"Temperature: {sensor_data.get('temperature', '--')} °C")
+        humidity_label.config(text=f"Humidity: {sensor_data.get('humidity', '--')} %")
+        pressure_label.config(text=f"Pressure: {sensor_data.get('pressure', '--')} hPa")
+        connection_status_label.config(text="Connection Status: Connected", fg='green')
+    else:
+        connection_status_label.config(text="Connection Status: Disconnected", fg='red')
+
+# Function to toggle the reset state
+def send_reset_command():
+    response = requests.post('http://localhost:5000/reset')
+    if response.ok:
+        print("Reset command sent successfully")
+    else:
+        print("Failed to send reset command")
+
+# GUI Functions
+# Create top bar
 def create_top_bar(parent):
-    # Creating a top bar frame
-    top_bar = tk.Frame(parent, bg="black", height=50)  # Set a distinct background color
-    top_bar.pack(side="top", fill="x")  # Fill the frame along the x-axis
-    # Creating a label in the top bar
-    label = tk.Label(top_bar, text="DSPS Control Software", bg="#211f1d", fg="white", anchor="w", font=("Arial", 14))  # Adjusted text color to white
-    label.pack(padx=10)  # Padding for some space from the left edge
-
+    top_bar = tk.Frame(parent, bg="black", height=50)
+    top_bar.pack(side="top", fill="x")
+    label = tk.Label(top_bar, text="DSPS Control Software", bg="#211f1d", fg="white", anchor="w", font=("Arial", 14))
+    label.pack(padx=10)
     return top_bar
 
+# Create left panel
 def create_left_panel(parent, width):
     left_frame = tk.Frame(parent, bg='black', width=width, height=290)
-    left_frame.place(x=0, y=29)
-    left_frame.pack_propagate(False)  # Prevent widgets from changing frame's size
+    # left_frame.place(x=0, y=29)
+    left_frame.pack_propagate(False)
     label = tk.Label(left_frame, text="Probe Live View", bg='#211f1d', fg='white', font=("Arial", 14))
     label.pack()
 
-    # Load the GIF with Pillow
-    gif_path = "media/sat_deploy.gif"
+    gif_path = "src/media/sat_deploy.gif"
     pil_image = Image.open(gif_path)
     frames = [ImageTk.PhotoImage(image.copy()) for image in ImageSequence.Iterator(pil_image)]
     frame_iterator = itertools.cycle(frames)
 
     image_label = tk.Label(left_frame, image=next(frame_iterator))
-    image_label.pack()  # Use pack here instead of grid
+    image_label.pack()
 
-    # Function to update the label with the next GIF frame
     def update_image():
         image_label.configure(image=next(frame_iterator))
-        parent.after(100, update_image)  # Adjust the delay as needed
+        parent.after(100, update_image)
 
-    # Start the animation
     parent.after(100, update_image)
     return left_frame
 
+# Create right panel
 def create_right_panel(parent, width):
-    right_frame = tk.Frame(parent, bg='black', width=width, height=290)  # Use the provided width
-    right_frame.place(x=width, y=29)  # Position it to the right of the left panel
-    right_frame.pack_propagate(False)  # Prevent widgets from changing frame's size
+    global temperature_label, humidity_label, pressure_label, date_time_label, connection_status_label
+    right_frame = tk.Frame(parent, bg='black', width=width, height=290)
+    right_frame.pack_propagate(False)
     label = tk.Label(right_frame, text="Live Telemetry", bg='#211f1d', fg='white', font=("Arial", 14))
     label.pack()
 
-    # Create labels for each line of text
-    text_labels = [
-        "Humidity: 0.05%",
-        "Atmospheric pressure: 6013 hPa",
-        "Temperature: -165°C",
-        "Time: 12:41 PM"
-    ]
-
-    # Add the text labels to the right frame with green color
-    for text in text_labels:
-        label = tk.Label(right_frame, text=text, bg='black', fg='green', font=("Arial", 14))  # Adjusted text color to green
-        label.pack(anchor="w")  # Align the text to the left
-
-
+    temperature_label = tk.Label(right_frame, text="Temperature: -- °C", bg='black', fg='green', font=("Arial", 14))
+    temperature_label.pack(anchor="w")
+    humidity_label = tk.Label(right_frame, text="Humidity: -- %", bg='black', fg='green', font=("Arial", 14))
+    humidity_label.pack(anchor="w")
+    pressure_label = tk.Label(right_frame, text="Pressure: -- hPa", bg='black', fg='green', font=("Arial", 14))
+    pressure_label.pack(anchor="w")
+    date_time_label = tk.Label(right_frame, text="Date & Time: --", bg='black', fg='green', font=("Arial", 14))
+    date_time_label.pack(anchor="w")
+    connection_status_label = tk.Label(right_frame, text="Connection Status: Disconnected", bg='black', fg='red', font=("Arial", 14))
+    connection_status_label.pack(anchor="w")
 
     return right_frame
 
-def create_bottom_panel(parent):
-    button_frame = tk.Frame(parent, bg='black', height=100)
-    button_frame.pack(side="bottom", fill="x")
+def update_telemetry(temperature, humidity, pressure, date_time, connection_status):
+    temperature_label.config(text=f"Temperature: {temperature} °C")
+    humidity_label.config(text=f"Humidity: {humidity} %")
+    pressure_label.config(text=f"Pressure: {pressure} hPa")
+    date_time_label.config(text=f"Date & Time: {date_time}")
+    connection_status_label.config(text=f"Connection Status: {connection_status}")
 
-    # Define the width of the buttons (you can adjust this value)
-    button_width = 18
-    button_height = 5
 
-    indicators = {}
+def create_bottom_left_panel(parent, on_off_command):
+    global on_off_button
+    # Define the width and height of the buttons
+    button_width = 15
+    button_height = 3
+    
+    bottom_left_frame = tk.Frame(parent, bg='black')
+    bottom_left_frame.grid(row=2, column=0, sticky="nsew")
+    parent.grid_rowconfigure(2, weight=1)
+    parent.grid_columnconfigure(0, weight=1)
+
+    # Buttons grid frame for 3x3 button layout
+    buttons_grid_frame = tk.Frame(bottom_left_frame, bg='black')
+    buttons_grid_frame.grid(row=0, column=1, sticky="nsew")
+
+    # Create and grid buttons
+    for i in range(3):
+        for j in range(3):
+            if i*3+j+1 == 9: 
+                button = tk.Button(buttons_grid_frame, text="Exit",
+                                   command=exit, 
+                                   bg="red", fg="white", font=("Arial", 10),
+                                   width=button_width, height=button_height)
+            else:
+                button = tk.Button(buttons_grid_frame, text=f"Button {i*3+j+1}",
+                                   bg="#211f1d", fg="white", font=("Arial", 10),
+                                   width=button_width, height=button_height)
+            button.grid(row=i, column=j, padx=5, pady=5, sticky="nsew")
+        buttons_grid_frame.grid_rowconfigure(i, weight=1)
+        buttons_grid_frame.grid_columnconfigure(j, weight=1)
+
+    # Add empty columns on either side of the buttons
+    bottom_left_frame.grid_columnconfigure(0, weight=1)
+    bottom_left_frame.grid_columnconfigure(2, weight=1)
 
     # Function to toggle the indicator color
-    def toggle_indicator(canvas, color):
-        canvas.config(bg=color)
-        canvas.itemconfig("indicator", fill=color)
+    def toggle_indicator(button, color):
+        button.config(bg=color)
 
-    # Define the commands for the buttons
-    def on_off_command():
-        toggle_indicator(indicators['On/Off'], 'green' if indicators['On/Off'].cget("bg") == 'red' else 'red')
-        print("Toggled On/Off")
+    # Create the 'On/Off' button and indicator
+    on_off_button = tk.Button(buttons_grid_frame, text="Telemetry On/Off", command=on_off_command, bg="#211f1d", fg="white", font=("Arial", 10), width=button_width, height=button_height)
+    on_off_button.grid(row=0, column=0, padx=10, pady=10)
 
-    def solar_panel_deployment_command():
-        toggle_indicator(indicators["Solar Panel \n Deployment"], 'green' if indicators["Solar Panel \n Deployment"].cget("bg") == 'red' else 'red')
-        print("Solar Panel \n Deployment")
+    # Create the 'Reset' button and binding to press and release
+    reset_button = tk.Button(buttons_grid_frame, text="Reset Device", bg='green', fg="white", font=("Arial", 10), width=button_width, height=button_height)
+    reset_button.grid(row=0, column=1, padx=10, pady=10)
+    reset_button.bind('<ButtonPress>', lambda event: toggle_indicator(reset_button, 'red'))
+    reset_button.bind('<ButtonRelease>', lambda event: toggle_indicator(reset_button, 'green'))
+    reset_button.bind('<ButtonRelease>', lambda event: send_reset_command())
 
-    def receive_telemetry_data_command():
-        toggle_indicator(indicators["Receiving telemetry data"],'green' if indicators["Receiving telemetry data"].cget("bg") == 'red' else 'red')
-        print("Receiving telemetry data")
+    return bottom_left_frame
 
-    def change_to_camera_view_command():
-        toggle_indicator(indicators["Change to \n Camera View"],'green' if indicators["Change to \n Camera View"].cget("bg") == 'red' else 'red')
-        print("Change to Camera View")
+def update_date_time():
+    if is_connected:
+        now = datetime.now()
+        date_time_label.config(text=f"Date & Time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+        # Call this function again after 1000 ms (1 second)
+        window.after(1000, update_date_time)
 
-    def change_to_gyroscope_view_command():
-        toggle_indicator(indicators["Change to \n Gyroscope View"], 'green' if indicators['Change to \n Gyroscope View'].cget("bg") == 'red' else 'red')
-        print("Change to Gyroscope View")
+# Define the commands for the buttons
+def on_off_command():
+    global is_connected, connection_status_label, temperature_label, humidity_label, pressure_label, date_time_label, on_off_button, chat_box
+    is_connected = not is_connected
+    status_text = "Connected" if is_connected else "Disconnected"  # Define status_text based on is_connected
+    button_color = "green" if is_connected else "red"
+    on_off_button.config(bg=button_color)
+    connection_status_label.config(text=f"Connection Status: {status_text}", fg='green' if is_connected else 'red')
+    # Update the chat box with the connection status
+    if chat_box:
+        chat_box.config(state='normal')
+        chat_box.insert(tk.END, f"Connection Status: {status_text}\n")
+        chat_box.see(tk.END)
+    if not is_connected:
+        temperature_label.config(text="Temperature: -- °C")
+        humidity_label.config(text="Humidity: -- %")
+        pressure_label.config(text="Pressure: -- hPa")
+        date_time_label.config(text="Date & Time: --")
+    chat_box.config(state='disabled')
+    if is_connected:
+        # Start updating date and time every second
+        update_date_time()
+    
 
-    # Define button texts and associated commands in a list of tuples
-    buttons_info = [
-        ("On/Off", on_off_command),
-        ("Solar Panel \n Deployment", solar_panel_deployment_command),
-        ("Receiving telemetry data", receive_telemetry_data_command),
-        ("Change to \n Camera View", change_to_camera_view_command),
-        ("Change to \n Gyroscope View", change_to_gyroscope_view_command)
-    ]
+# Function to toggle the indicator color
+def toggle_indicator(button, color):
+    button.config(bg=color)
 
-    # Create and pack buttons and indicators into the frame
-    for text, command in buttons_info:
-        # Create a frame to hold the button and indicator
-        button_indicator_frame = tk.Frame(button_frame, bg='black')
-        button_indicator_frame.pack(side="left", padx=5, pady=65, expand=True)
+def create_bottom_right_panel(parent):
+    global chat_box
+    # Chat and Prompt boxes frame to the right of the buttons
+    bottom_right_frame = tk.Frame(parent, bg='green')  # Changed bg to green for visibility
+    bottom_right_frame.grid(row=2, column=1, sticky="nsew")
+    parent.grid_columnconfigure(1, weight=1)
 
-        # Create the button
-        button = tk.Button(button_indicator_frame, text=text, command=command, bg="#211f1d", fg="white", font=("Arial", 10), width=button_width, height=button_height)
-        button.pack(side="left")
+    chat_box = tk.Text(bottom_right_frame, height=1, width=59)  #59 
+    chat_box.grid(row=0, column=0, sticky="nsew")  
+    bottom_right_frame.grid_rowconfigure(0, weight=6)  
+    bottom_right_frame.grid_columnconfigure(0, weight=2)  
+    chat_box.insert("end", "Welcome to the DSPS Control Software!\n")
+    chat_box.insert("end", "To start, use the command buttons on your left. Type "'!help'" for extra console controls.\n")
+    chat_box.config(state="disabled")  # Disable the chat box
 
-        # Create the indicator canvas
-        indicator = tk.Canvas(button_indicator_frame, width=20, height=92, bg='red', highlightthickness=0)
-        indicator.pack(side="left", padx=0, pady=10)
+    input_area = tk.Entry(bottom_right_frame, font=('Arial', 16))
+    input_area.grid(row=1, column=0, sticky="ew", columnspan=2, pady=5)
 
-        # Store the indicator canvas in the dictionary
-        indicators[text] = indicator
+    def send_message(event):
+        message = input_area.get()  # Get the message from the input area
+        insert_text(message)  # Add the message to the text box
+        input_area.delete(0, "end")  # Clear the input area
 
-    return button_frame
+    input_area.bind("<Return>", send_message) # Bind the 'Return' key to the send_message function  
 
-def configure_main_window(window):
+    # Define the commands
+    commands = {
+        "!clear": lambda: clear_chat_box(),
+        "!help": lambda: insert_text("Available commands: \n !clear (Clear the console), \n !help (Display all console commands), \n !telon (Turn Telemetry On), \n !teloff (Turn Telemetry Off), \n !exit (Quit Application)"),
+        "!telon": lambda: on_off_command(),
+        "!teloff": lambda: on_off_command(),
+        "!exit": lambda: exit_software(),
+        # More commands if need be 
+    }
+
+    def clear_chat_box():
+        chat_box.config(state="normal")  # Enable the chat box
+        chat_box.delete(1.0, "end")  # Delete all text in the chat box
+        chat_box.config(state="disabled")  # Disable the chat box again
+
+    def send_message(event):
+        message = input_area.get()  # Get the message from the input area
+        if message in commands:  # If the message is a command
+            commands[message]()  # Execute the command
+        else:
+            insert_text(message)  # Add the message to the text box
+        input_area.delete(0, "end")  # Clear the input area
+    input_area.bind("<Return>", send_message) 
+
+    return bottom_right_frame
+
+# Function to insert text into the chat box
+def insert_text(text):
+    if chat_box:  # Check if the chat box is initialized
+        chat_box.config(state="normal")  # Enable the chat box to insert text
+        chat_box.insert("end", text + "\n")  # Insert the text
+        chat_box.see("end")  # Scroll to the bottom
+        chat_box.config(state="disabled")  # Disable the chat box again
+
+def exit_software():
+    # Function to exit the software
+    insert_text("Exiting DSPS Control Software...")
+    try:
+        # This is how you would typically stop a Flask server running in debug mode
+        os.kill(os.getpid(), signal.SIGINT)
+    except Exception as e:
+        insert_text(f"Failed to stop Flask server: {e}")
+
+    # Close the Tkinter window
+    window.destroy()
+
+# Main application window
+def main():
+    global window
+    window = tk.Tk()
     window.title('DSPS Mission Control')
-    window.geometry('960x540')
+    window.attributes('-fullscreen', True)
     window.resizable(False, False)
     window.configure(bg="#2b0057")
 
+    create_top_bar(window).grid(row=0, column=0, columnspan=2, sticky="nsew")
+    create_left_panel(window, 480).grid(row=1, column=0, sticky="nsew")
+    create_right_panel(window, 480).grid(row=1, column=1, sticky="nsew")
+    create_bottom_left_panel(window, on_off_command).grid(row=2, column=0, sticky="nsew")
+    create_bottom_right_panel(window).grid(row=2, column=1, sticky="nsew")
 
-def main():
-    global window  # Remove the global declaration for left_panel_width
-    window = tk.Tk()
-    configure_main_window(window)
-
-    create_top_bar(window)
-
-    # Assign the desired widths for the left and right panels
-    left_panel_width = 480  # Specify the desired width for the left panel
-    right_panel_width = 480  # Specify the desired width for the right panel
-
-    create_left_panel(window, left_panel_width)
-    create_right_panel(window, right_panel_width)
-    create_bottom_panel(window)
+    window.grid_rowconfigure(1, weight=2)  # Allocate space for left and right panels
+    window.grid_columnconfigure(0, weight=1)
+    window.grid_columnconfigure(1, weight=1)
 
     window.mainloop()
 
-
 if __name__ == "__main__":
+    flask_thread = threading.Thread(target=run_flask_app, daemon=True)
+    flask_thread.start()
     main()
-
-
