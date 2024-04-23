@@ -1,7 +1,8 @@
 #### Table of Content:
 1. Introduction
-2. Getting Started
-... 2.1 Software
+2. Software
+
+---
    
 
 ### 1. Introduction to the Deep Space Probe Simulator (DSPS)
@@ -40,6 +41,5 @@ The DSPS project not only broadens the knowledge and skills of those involved bu
 
 ---
 
-#### 2. Getting Started
-  #### 2.1 Software
+#### 2. Software
 
