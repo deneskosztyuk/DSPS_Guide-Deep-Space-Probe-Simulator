@@ -1,7 +1,7 @@
 #### Table of Content:
 1. Introduction
 2. Getting Started
-  2.1 Software
+... 2.1 Software
    
 
 ### 1. Introduction to the Deep Space Probe Simulator (DSPS)
