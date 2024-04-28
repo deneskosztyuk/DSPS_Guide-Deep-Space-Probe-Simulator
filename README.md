@@ -3,7 +3,7 @@
 2. Software 
 
 ---
-   
+
 
 ### 1. Introduction to the Deep Space Probe Simulator (DSPS)
 
