@@ -13,6 +13,7 @@ should_reset = False
 temperature_label = None
 humidity_label = None
 pressure_label = None
+altitude_label = None
 date_time_label = None
 connection_status_label = None
 chat_box = None
@@ -48,11 +49,12 @@ def run_flask_app():
 
 # Function to update the labels with sensor data
 def update_sensor_data(sensor_data):
-    global temperature_label, humidity_label, pressure_label, connection_status_label
+    global temperature_label, humidity_label, pressure_label, altitude_label, connection_status_label
     if temperature_label and humidity_label and pressure_label:
         temperature_label.config(text=f"Temperature: {sensor_data.get('temperature', '--')} °C")
         humidity_label.config(text=f"Humidity: {sensor_data.get('humidity', '--')} %")
         pressure_label.config(text=f"Pressure: {sensor_data.get('pressure', '--')} hPa")
+        altitude_label.config(text=f"Altitude: {sensor_data.get('altitude', '--')} m")
         connection_status_label.config(text="Connection Status: Connected", fg='green')
     else:
         connection_status_label.config(text="Connection Status: Disconnected", fg='red')
@@ -99,18 +101,19 @@ def create_left_panel(parent, width):
 
 # Create right panel
 def create_right_panel(parent, width):
-    global temperature_label, humidity_label, pressure_label, date_time_label, connection_status_label
+    global temperature_label, humidity_label, pressure_label, altitude_label, date_time_label, connection_status_label
     right_frame = tk.Frame(parent, bg='black', width=width, height=290)
     right_frame.pack_propagate(False)
-    label = tk.Label(right_frame, text="Live Telemetry", bg='#211f1d', fg='white', font=("Arial", 14))
-    label.pack()
 
+    # Ensure labels are properly initialized here
     temperature_label = tk.Label(right_frame, text="Temperature: -- °C", bg='black', fg='green', font=("Arial", 14))
     temperature_label.pack(anchor="w")
     humidity_label = tk.Label(right_frame, text="Humidity: -- %", bg='black', fg='green', font=("Arial", 14))
     humidity_label.pack(anchor="w")
     pressure_label = tk.Label(right_frame, text="Pressure: -- hPa", bg='black', fg='green', font=("Arial", 14))
     pressure_label.pack(anchor="w")
+    altitude_label = tk.Label(right_frame, text="Approx Altitude: -- m", bg='black', fg='green', font=("Arial", 14))
+    altitude_label.pack(anchor="w") 
     date_time_label = tk.Label(right_frame, text="Date & Time: --", bg='black', fg='green', font=("Arial", 14))
     date_time_label.pack(anchor="w")
     connection_status_label = tk.Label(right_frame, text="Connection Status: Disconnected", bg='black', fg='red', font=("Arial", 14))
@@ -118,10 +121,12 @@ def create_right_panel(parent, width):
 
     return right_frame
 
-def update_telemetry(temperature, humidity, pressure, date_time, connection_status):
+
+def update_telemetry(temperature, humidity, pressure, altitude, date_time, connection_status):
     temperature_label.config(text=f"Temperature: {temperature} °C")
     humidity_label.config(text=f"Humidity: {humidity} %")
     pressure_label.config(text=f"Pressure: {pressure} hPa")
+    altitude_label.config(text=f"Approx Altitude: {altitude} m")
     date_time_label.config(text=f"Date & Time: {date_time}")
     connection_status_label.config(text=f"Connection Status: {connection_status}")
 
@@ -144,9 +149,9 @@ def create_bottom_left_panel(parent, on_off_command):
     # Create and grid buttons
     for i in range(3):
         for j in range(3):
-            if i*3+j+1 == 9: 
+            if i*3+j+1 == 9:  # If this is the 9th button
                 button = tk.Button(buttons_grid_frame, text="Exit",
-                                   command=exit, 
+                                   command=exit,  # Set the command to exit
                                    bg="red", fg="white", font=("Arial", 10),
                                    width=button_width, height=button_height)
             else:
@@ -181,7 +186,7 @@ def create_bottom_left_panel(parent, on_off_command):
 def update_date_time():
     if is_connected:
         now = datetime.now()
-        date_time_label.config(text=f"Date & Time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+        date_time_label.config(text=f"Date & Time: {now.strftime('%d-%m-%Y %H:%M:%S')}")
         # Call this function again after 1000 ms (1 second)
         window.after(1000, update_date_time)
 
@@ -202,6 +207,7 @@ def on_off_command():
         temperature_label.config(text="Temperature: -- °C")
         humidity_label.config(text="Humidity: -- %")
         pressure_label.config(text="Pressure: -- hPa")
+        altitude_label.config(text="Aprox Altitude: -- m")
         date_time_label.config(text="Date & Time: --")
     chat_box.config(state='disabled')
     if is_connected:
@@ -220,12 +226,12 @@ def create_bottom_right_panel(parent):
     bottom_right_frame.grid(row=2, column=1, sticky="nsew")
     parent.grid_columnconfigure(1, weight=1)
 
-    chat_box = tk.Text(bottom_right_frame, height=1, width=59)  #59 
+    chat_box = tk.Text(bottom_right_frame, height=1, width=59)  #59 Adjust height and width
     chat_box.grid(row=0, column=0, sticky="nsew")  
     bottom_right_frame.grid_rowconfigure(0, weight=6)  
     bottom_right_frame.grid_columnconfigure(0, weight=2)  
     chat_box.insert("end", "Welcome to the DSPS Control Software!\n")
-    chat_box.insert("end", "To start, use the command buttons on your left. Type "'!help'" for extra console controls.\n")
+    chat_box.insert("end", "To start, use the command buttons on your left. \nType "'!help'" for extra console controls.\n")
     chat_box.config(state="disabled")  # Disable the chat box
 
     input_area = tk.Entry(bottom_right_frame, font=('Arial', 16))
@@ -241,7 +247,7 @@ def create_bottom_right_panel(parent):
     # Define the commands
     commands = {
         "!clear": lambda: clear_chat_box(),
-        "!help": lambda: insert_text("Available commands: \n !clear (Clear the console), \n !help (Display all console commands), \n !telon (Turn Telemetry On), \n !teloff (Turn Telemetry Off), \n !exit (Quit Application)"),
+        "!help": lambda: insert_text("Available commands: \n !clear (Clear the console) \n !help (Display all console commands) \n !telon (Turn Telemetry On) \n !teloff (Turn Telemetry Off) \n !exit (Quit Application)"),
         "!telon": lambda: on_off_command(),
         "!teloff": lambda: on_off_command(),
         "!exit": lambda: exit_software(),
