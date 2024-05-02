@@ -7,8 +7,8 @@
 
 Adafruit_BME280 bme; // I2C
 
-const char* ssid = "S21 Ultra";  // Replace with your hotspot's SSID
-const char* password = "seneD7811!";  // Replace with your hotspot's password
+const char* ssid = "ENTER YOUR WIFI NETWORKS NAME EXACTLY";  // Replace with your hotspot's SSID
+const char* password = "CHANGE THIS TO YOUR NETWORKS PASSWORD";  // Replace with your hotspot's password
 
 const int ledPin = 23;  // Use GPIO 23 for the LED
 
@@ -33,7 +33,7 @@ void setup() {
 void sendSensorData() {
   if(WiFi.status() == WL_CONNECTED) { // Check if we're connected to the Wi-Fi
     HTTPClient http;
-    http.begin("http://192.168.169.33:5000/sensor-data"); // Your server's URL
+    http.begin("CHANGE THIS TO YOUR IPv4/sensor-data"); // Your server's URL, example: http.begin("192.168.1.1/sensor-data");
     http.addHeader("Content-Type", "application/json");
 
     StaticJsonDocument<256> doc;  // Increased size for safety
