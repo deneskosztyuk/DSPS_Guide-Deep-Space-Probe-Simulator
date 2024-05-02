@@ -153,4 +153,4 @@ Now you have the BME280 sensor successfully setup.
 
 Now that you succesfully setup both codes and the hardware, go ahead and Verify button in the Arduino IDE, once succesfully compiled press the `Upload` button next to it to upload your code to the ESP32, once successful you should see BME280 readings in the `Serial Monitor` (second tab at the bottom once the code has been uploaded, or the maginifying glass icon in the top right). Once that's done, head on to VS Code and run your main.py code, you will see the DSPS Control Software switch on, from this point you can start playing around with it as you successfully made a simple satellite probe in a home setting.
 
-If for any reason you experience issues or bugs, use the `Contact Me` on my webpage: [denesk.co.uk](https://denesk.co.uk/)
+If for any reason you experience issues or bugs, use the `Contact Me` on my webpage: [denesk.co.uk](https://www.denesk.co.uk/)
