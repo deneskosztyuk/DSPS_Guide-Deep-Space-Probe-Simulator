@@ -1,10 +1,10 @@
-#### Table of Content:
-1. Introduction
-2. Software
-2.1 Python
-2.2 Arduino C++
-3. Hardware setup
-4. Conclusion
+## Table of Content:
+### 1. Introduction
+### 2. Software
+### 2.1 Python
+### 2.2 Arduino C++
+### 3. Hardware setup
+### 4. Conclusion
 
 ---
 
