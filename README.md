@@ -60,7 +60,7 @@ To get started:
 1. Open your favourite IDE, for this I recommend VS Code.
 2. Create a new folder which will hold your Python script.
 3. Create a main.py script in the new folder you just made.
-4. Clone or copy the main.py code from this git repository.
+4. Clone or copy the main.py code from this git repository. (https://github.com/deneskosztyuk/DSPS_Guide-Deep-Space-Probe-Simulator/blob/main/main.py)
 5. Head to the "Terminal" tab in VS Code (or press "ctrl+`" on Windows, alternatively you can click on the View tab at the top and choose Terminal from the list)
 6. In the Terminal that just opened install the necessary python libraries in order to make the main.py script work.
 To install the necessary libraries paste the following command into your Termnial: "pip install requests pillow flask matplotlib"
@@ -107,6 +107,7 @@ You can install these libraries by opening the Arduino IDE, going to `Sketch > I
 Remember that some of these libraries may have dependencies on other libraries, so make sure to check the documentation for each library to ensure you have all the necessary components installed for your project.
 
 - Once you installed the necessary libraries, go ahead and copy the code that ends with .ino from this repository.
+(https://github.com/deneskosztyuk/DSPS_Guide-Deep-Space-Probe-Simulator/blob/main/dsps.ino)
 This section will be a bit more comprehensive but dont worry, just read throug the guide carefully.
 There are a few things you will need to change in the `dsps.ino` file, find the:
 `const char* ssid = "ENTER YOUR WIFI NETWORKS NAME EXACTLY";  // Replace with your hotspot's SSID
