@@ -1,4 +1,4 @@
-## Table of Content:
+## Table of Content: 
 ### 1. Introduction
 ### 2. Software
 ### 2.1 Python
